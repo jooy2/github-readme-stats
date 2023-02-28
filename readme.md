@@ -92,7 +92,9 @@ Visit <https://indiafightscorona.giveindia.org> and make a small donation to hel
     -   [Repo Card Exclusive Options](#repo-card-exclusive-options)
     -   [Language Card Exclusive Options](#language-card-exclusive-options)
     -   [Wakatime Card Exclusive Option](#wakatime-card-exclusive-options)
--   [Deploy Yourself](#deploy-on-your-own-vercel-instance)
+-   [Deploy Yourself](#deploy-on-your-own)
+    -   [On Vercel](#on-vercel)
+    -   [On other platforms](#on-other-platforms)
     -   [Keep your fork up to date](#keep-your-fork-up-to-date)
 
 # GitHub Stats Card
@@ -133,7 +135,7 @@ You can add the count of all your private contributions to the total commits cou
 
 ### Showing icons
 
-To enable icons, you can pass `show_icons=true` in the query param, like so:
+To enable icons, you can pass `&show_icons=true` in the query param, like so:
 
 ```md
 ![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=anuraghazra&show_icons=true)
@@ -305,6 +307,7 @@ You can provide multiple comma-separated values in the bg_color option to render
 -   `exclude_repo` - Exclude specified repositories _(Comma-separated values)_. Default: `[] (blank array)`.
 -   `custom_title` - Sets a custom title for the card _(string)_. Default `Most Used Languages`.
 -   `disable_animations` - Disables all animations in the card _(boolean)_. Default: `false`.
+-   `hide_progress` - It uses the compact layout option, hides percentages, and removes the bars. Default: `false`.
 
 > **Warning**
 > Language names should be URI-escaped, as specified in [Percent Encoding](https://en.wikipedia.org/wiki/Percent-encoding)
@@ -398,6 +401,14 @@ You can use the `&layout=compact` option to change the card design.
 [![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=anuraghazra&layout=compact)](https://github.com/anuraghazra/github-readme-stats)
 ```
 
+### Hide Progress Bars
+
+You can use the `&hide_progress=true` option to hide the percentages and the progress bars (layout will be automatically set to `compact`).
+
+```md
+[![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=anuraghazra&hide_progress=true)](https://github.com/anuraghazra/github-readme-stats)
+```
+
 ### Demo
 
 [![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=anuraghazra)](https://github.com/anuraghazra/github-readme-stats)
@@ -405,6 +416,10 @@ You can use the `&layout=compact` option to change the card design.
 -   Compact layout
 
 [![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=anuraghazra&layout=compact)](https://github.com/anuraghazra/github-readme-stats)
+
+- Hidden progress bars
+
+[![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=anuraghazra&hide_progress=true)](https://github.com/anuraghazra/github-readme-stats)
 
 # Wakatime Week Stats
 
@@ -496,7 +511,9 @@ By default, GitHub does not lay out the cards side by side. To do that, you can 
 </a>
 ```
 
-## Deploy on your own Vercel instance
+## Deploy on your own
+
+### On Vercel
 
 #### :film_projector: [Check Out Step By Step Video Tutorial By @codeSTACKr](https://youtu.be/n6d4KHSKqGk?t=107)
 
@@ -531,6 +548,23 @@ Since the GitHub API only allows 5k requests per hour, my `https://github-readme
     ![](https://files.catbox.moe/0yclio.png)
 12. Click deploy, and you're good to go. See your domains to use the API!
 
+</details>
+
+### On other platforms
+
+> **Warning**
+> This way of using GRS is not officially supported and was added to cater to some particular use cases where Vercel could not be used (e.g. #2341). The support for this method, therefore, is limited.
+
+<details>
+<summary><b>:hammer_and_wrench: Step-by-step guide for deploying on other platforms</b></summary>
+
+1. Fork or clone this repo as per your needs
+2. Add `express` to the dependencies section of `package.json`
+https://github.com/anuraghazra/github-readme-stats/blob/ba7c2f8b55eac8452e479c8bd38b044d204d0424/package.json#L54-L61
+3. Run `npm i` if needed (initial setup)
+4. Run `node express.js` to start the server, or set the entry point to `express.js` in `package.json` if you're deploying on a managed service
+https://github.com/anuraghazra/github-readme-stats/blob/ba7c2f8b55eac8452e479c8bd38b044d204d0424/package.json#L11
+5. You're done 🎉
 </details>
 
 ### Keep your fork up to date
