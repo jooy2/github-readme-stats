@@ -5,6 +5,7 @@ import api from "../api/index.js";
 import { calculateRank } from "../src/calculateRank.js";
 import { renderStatsCard } from "../src/cards/stats-card.js";
 import { CONSTANTS, renderError } from "../src/common/utils.js";
+import { expect, it, describe, afterEach } from "@jest/globals";
 
 const stats = {
   name: "Anurag Hazra",
@@ -12,6 +13,9 @@ const stats = {
   totalCommits: 200,
   totalIssues: 300,
   totalPRs: 400,
+  totalReviews: 50,
+  totalDiscussionsStarted: 10,
+  totalDiscussionsAnswered: 40,
   contributedTo: 50,
   rank: null,
 };
@@ -33,12 +37,16 @@ const data_stats = {
       repositoriesContributedTo: { totalCount: stats.contributedTo },
       contributionsCollection: {
         totalCommitContributions: stats.totalCommits,
-        restrictedContributionsCount: 100,
+        totalPullRequestReviewContributions: stats.totalReviews,
       },
       pullRequests: { totalCount: stats.totalPRs },
       openIssues: { totalCount: stats.totalIssues },
       closedIssues: { totalCount: 0 },
       followers: { totalCount: 0 },
+      repositoryDiscussions: { totalCount: stats.totalDiscussionsStarted },
+      repositoryDiscussionComments: {
+        totalCount: stats.totalDiscussionsAnswered,
+      },
       repositories: {
         totalCount: 1,
         nodes: [{ stargazers: { totalCount: 100 } }],
