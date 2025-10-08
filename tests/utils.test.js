@@ -1,14 +1,15 @@
+import { describe, expect, it } from "@jest/globals";
 import { queryByTestId } from "@testing-library/dom";
 import "@testing-library/jest-dom";
 import {
   encodeHTML,
+  formatBytes,
   getCardColors,
   kFormatter,
   parseBoolean,
   renderError,
   wrapTextMultiline,
 } from "../src/common/utils.js";
-import { expect, it, describe } from "@jest/globals";
 
 describe("Test utils.js", () => {
   it("should test kFormatter", () => {
@@ -45,7 +46,7 @@ describe("Test utils.js", () => {
   });
 
   it("should test renderError", () => {
-    document.body.innerHTML = renderError("Something went wrong");
+    document.body.innerHTML = renderError({ message: "Something went wrong" });
     expect(
       queryByTestId(document.body, "message").children[0],
     ).toHaveTextContent(/Something went wrong/gim);
@@ -54,10 +55,10 @@ describe("Test utils.js", () => {
     ).toBeEmptyDOMElement(2);
 
     // Secondary message
-    document.body.innerHTML = renderError(
-      "Something went wrong",
-      "Secondary Message",
-    );
+    document.body.innerHTML = renderError({
+      message: "Something went wrong",
+      secondaryMessage: "Secondary Message",
+    });
     expect(
       queryByTestId(document.body, "message").children[1],
     ).toHaveTextContent(/Secondary Message/gim);
@@ -133,6 +134,20 @@ describe("Test utils.js", () => {
       bgColor: "#fff",
       borderColor: "#fff",
     });
+  });
+
+  it("formatBytes: should return expected values", () => {
+    expect(formatBytes(0)).toBe("0 B");
+    expect(formatBytes(100)).toBe("100.0 B");
+    expect(formatBytes(1024)).toBe("1.0 KB");
+    expect(formatBytes(1024 * 1024)).toBe("1.0 MB");
+    expect(formatBytes(1024 * 1024 * 1024)).toBe("1.0 GB");
+    expect(formatBytes(1024 * 1024 * 1024 * 1024)).toBe("1.0 TB");
+    expect(formatBytes(1024 * 1024 * 1024 * 1024 * 1024)).toBe("1.0 PB");
+    expect(formatBytes(1024 * 1024 * 1024 * 1024 * 1024 * 1024)).toBe("1.0 EB");
+
+    expect(formatBytes(1234 * 1024)).toBe("1.2 MB");
+    expect(formatBytes(123.4 * 1024)).toBe("123.4 KB");
   });
 });
 

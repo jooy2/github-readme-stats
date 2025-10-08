@@ -20,6 +20,7 @@ export type StatCardOptions = CommonOptions & {
   card_width: number;
   hide_rank: boolean;
   include_all_commits: boolean;
+  commits_year: number;
   line_height: number | string;
   custom_title: string;
   disable_animations: boolean;
@@ -44,11 +45,13 @@ export type TopLangOptions = CommonOptions & {
   langs_count: number;
   disable_animations: boolean;
   hide_progress: boolean;
+  stats_format: "percentages" | "bytes";
 };
 
 export type WakaTimeOptions = CommonOptions & {
   hide_title: boolean;
   hide: string[];
+  card_width: number;
   line_height: string;
   hide_progress: boolean;
   custom_title: string;

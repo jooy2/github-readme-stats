@@ -1,13 +1,19 @@
-import { renderStatsCard } from "../src/cards/stats-card.js";
-import { blacklist } from "../src/common/blacklist.js";
+// @ts-check
+
+import { renderStatsCard } from "../src/cards/stats.js";
+import { guardAccess } from "../src/common/access.js";
 import {
-  clampValue,
+  resolveCacheSeconds,
+  setCacheHeaders,
+  setErrorCacheHeaders,
+} from "../src/common/cache.js";
+import {
   CONSTANTS,
   parseArray,
   parseBoolean,
   renderError,
 } from "../src/common/utils.js";
-import { fetchStats } from "../src/fetchers/stats-fetcher.js";
+import { fetchStats } from "../src/fetchers/stats.js";
 import { isLocaleAvailable } from "../src/translations.js";
 
 export default async (req, res) => {
@@ -20,6 +26,7 @@ export default async (req, res) => {
     hide_rank,
     show_icons,
     include_all_commits,
+    commits_year,
     line_height,
     title_color,
     ring_color,
@@ -41,26 +48,34 @@ export default async (req, res) => {
   } = req.query;
   res.setHeader("Content-Type", "image/svg+xml");
 
-  if (blacklist.includes(username)) {
-    return res.send(
-      renderError("Something went wrong", "This username is blacklisted", {
-        title_color,
-        text_color,
-        bg_color,
-        border_color,
-        theme,
-      }),
-    );
+  const access = guardAccess({
+    res,
+    id: username,
+    type: "username",
+    colors: {
+      title_color,
+      text_color,
+      bg_color,
+      border_color,
+      theme,
+    },
+  });
+  if (!access.isPassed) {
+    return access.result;
   }
 
   if (locale && !isLocaleAvailable(locale)) {
     return res.send(
-      renderError("Something went wrong", "Language not found", {
-        title_color,
-        text_color,
-        bg_color,
-        border_color,
-        theme,
+      renderError({
+        message: "Something went wrong",
+        secondaryMessage: "Language not found",
+        renderOptions: {
+          title_color,
+          text_color,
+          bg_color,
+          border_color,
+          theme,
+        },
       }),
     );
   }
@@ -75,21 +90,16 @@ export default async (req, res) => {
         showStats.includes("prs_merged_percentage"),
       showStats.includes("discussions_started"),
       showStats.includes("discussions_answered"),
+      parseInt(commits_year, 10),
     );
+    const cacheSeconds = resolveCacheSeconds({
+      requested: parseInt(cache_seconds, 10),
+      def: CONSTANTS.CARD_CACHE_SECONDS,
+      min: CONSTANTS.TWELVE_HOURS,
+      max: CONSTANTS.TWO_DAY,
+    });
 
-    let cacheSeconds = clampValue(
-      parseInt(cache_seconds || CONSTANTS.CARD_CACHE_SECONDS, 10),
-      CONSTANTS.TWELVE_HOURS,
-      CONSTANTS.TWO_DAY,
-    );
-    cacheSeconds = process.env.CACHE_SECONDS
-      ? parseInt(process.env.CACHE_SECONDS, 10) || cacheSeconds
-      : cacheSeconds;
-
-    res.setHeader(
-      "Cache-Control",
-      `max-age=${cacheSeconds}, s-maxage=${cacheSeconds}, stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
-    );
+    setCacheHeaders(res, cacheSeconds);
 
     return res.send(
       renderStatsCard(stats, {
@@ -100,6 +110,7 @@ export default async (req, res) => {
         card_width: parseInt(card_width, 10),
         hide_rank: parseBoolean(hide_rank),
         include_all_commits: parseBoolean(include_all_commits),
+        commits_year: parseInt(commits_year, 10),
         line_height,
         title_color,
         ring_color,
@@ -119,19 +130,18 @@ export default async (req, res) => {
       }),
     );
   } catch (err) {
-    res.setHeader(
-      "Cache-Control",
-      `max-age=${CONSTANTS.ERROR_CACHE_SECONDS / 2}, s-maxage=${
-        CONSTANTS.ERROR_CACHE_SECONDS
-      }, stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
-    ); // Use lower cache period for errors.
+    setErrorCacheHeaders(res);
     return res.send(
-      renderError(err.message, err.secondaryMessage, {
-        title_color,
-        text_color,
-        bg_color,
-        border_color,
-        theme,
+      renderError({
+        message: err.message,
+        secondaryMessage: err.secondaryMessage,
+        renderOptions: {
+          title_color,
+          text_color,
+          bg_color,
+          border_color,
+          theme,
+        },
       }),
     );
   }
