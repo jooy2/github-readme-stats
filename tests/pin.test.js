@@ -6,7 +6,8 @@ import axios from "axios";
 import MockAdapter from "axios-mock-adapter";
 import pin from "../api/pin.js";
 import { renderRepoCard } from "../src/cards/repo.js";
-import { CONSTANTS, renderError } from "../src/common/utils.js";
+import { renderError } from "../src/common/render.js";
+import { CACHE_TTL, DURATIONS } from "../src/common/cache.js";
 
 const data_repo = {
   repository: {
@@ -55,8 +56,8 @@ describe("Test /api/pin", () => {
 
     await pin(req, res);
 
-    expect(res.setHeader).toBeCalledWith("Content-Type", "image/svg+xml");
-    expect(res.send).toBeCalledWith(
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "image/svg+xml");
+    expect(res.send).toHaveBeenCalledWith(
       // @ts-ignore
       renderRepoCard({
         ...data_repo.repository,
@@ -85,8 +86,8 @@ describe("Test /api/pin", () => {
 
     await pin(req, res);
 
-    expect(res.setHeader).toBeCalledWith("Content-Type", "image/svg+xml");
-    expect(res.send).toBeCalledWith(
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "image/svg+xml");
+    expect(res.send).toHaveBeenCalledWith(
       renderRepoCard(
         // @ts-ignore
         {
@@ -115,8 +116,8 @@ describe("Test /api/pin", () => {
 
     await pin(req, res);
 
-    expect(res.setHeader).toBeCalledWith("Content-Type", "image/svg+xml");
-    expect(res.send).toBeCalledWith(
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "image/svg+xml");
+    expect(res.send).toHaveBeenCalledWith(
       renderError({ message: "User Repository Not found" }),
     );
   });
@@ -138,8 +139,8 @@ describe("Test /api/pin", () => {
 
     await pin(req, res);
 
-    expect(res.setHeader).toBeCalledWith("Content-Type", "image/svg+xml");
-    expect(res.send).toBeCalledWith(
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "image/svg+xml");
+    expect(res.send).toHaveBeenCalledWith(
       renderError({ message: "Organization Repository Not found" }),
     );
   });
@@ -159,8 +160,8 @@ describe("Test /api/pin", () => {
 
     await pin(req, res);
 
-    expect(res.setHeader).toBeCalledWith("Content-Type", "image/svg+xml");
-    expect(res.send).toBeCalledWith(
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "image/svg+xml");
+    expect(res.send).toHaveBeenCalledWith(
       renderError({
         message: "This username is blacklisted",
         secondaryMessage: "Please deploy your own instance",
@@ -185,8 +186,8 @@ describe("Test /api/pin", () => {
 
     await pin(req, res);
 
-    expect(res.setHeader).toBeCalledWith("Content-Type", "image/svg+xml");
-    expect(res.send).toBeCalledWith(
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "image/svg+xml");
+    expect(res.send).toHaveBeenCalledWith(
       renderError({
         message: "Something went wrong",
         secondaryMessage: "Language not found",
@@ -205,12 +206,13 @@ describe("Test /api/pin", () => {
 
     await pin(req, res);
 
-    expect(res.setHeader).toBeCalledWith("Content-Type", "image/svg+xml");
-    expect(res.send).toBeCalledWith(
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "image/svg+xml");
+    expect(res.send).toHaveBeenCalledWith(
       renderError({
         message:
           'Missing params "username", "repo" make sure you pass the parameters in URL',
         secondaryMessage: "/api/pin?username=USERNAME&amp;repo=REPO_NAME",
+        renderOptions: { show_repo_link: false },
       }),
     );
   });
@@ -230,12 +232,12 @@ describe("Test /api/pin", () => {
 
     await pin(req, res);
 
-    expect(res.setHeader).toBeCalledWith("Content-Type", "image/svg+xml");
-    expect(res.setHeader).toBeCalledWith(
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "image/svg+xml");
+    expect(res.setHeader).toHaveBeenCalledWith(
       "Cache-Control",
-      `max-age=${CONSTANTS.PIN_CARD_CACHE_SECONDS}, ` +
-        `s-maxage=${CONSTANTS.PIN_CARD_CACHE_SECONDS}, ` +
-        `stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
+      `max-age=${CACHE_TTL.PIN_CARD.DEFAULT}, ` +
+        `s-maxage=${CACHE_TTL.PIN_CARD.DEFAULT}, ` +
+        `stale-while-revalidate=${DURATIONS.ONE_DAY}`,
     );
   });
 });

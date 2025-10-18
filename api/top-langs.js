@@ -3,19 +3,21 @@
 import { renderTopLanguages } from "../src/cards/top-languages.js";
 import { guardAccess } from "../src/common/access.js";
 import {
+  CACHE_TTL,
   resolveCacheSeconds,
   setCacheHeaders,
   setErrorCacheHeaders,
 } from "../src/common/cache.js";
 import {
-  CONSTANTS,
-  parseArray,
-  parseBoolean,
-  renderError,
-} from "../src/common/utils.js";
+  MissingParamError,
+  retrieveSecondaryMessage,
+} from "../src/common/error.js";
+import { parseArray, parseBoolean } from "../src/common/ops.js";
+import { renderError } from "../src/common/render.js";
 import { fetchTopLanguages } from "../src/fetchers/top-languages.js";
 import { isLocaleAvailable } from "../src/translations.js";
 
+// @ts-ignore
 export default async (req, res) => {
   const {
     username,
@@ -124,9 +126,9 @@ export default async (req, res) => {
     );
     const cacheSeconds = resolveCacheSeconds({
       requested: parseInt(cache_seconds, 10),
-      def: CONSTANTS.TOP_LANGS_CACHE_SECONDS,
-      min: CONSTANTS.TWO_DAY,
-      max: CONSTANTS.TEN_DAY,
+      def: CACHE_TTL.TOP_LANGS_CARD.DEFAULT,
+      min: CACHE_TTL.TOP_LANGS_CARD.MIN,
+      max: CACHE_TTL.TOP_LANGS_CARD.MAX,
     });
 
     setCacheHeaders(res, cacheSeconds);
@@ -154,10 +156,25 @@ export default async (req, res) => {
     );
   } catch (err) {
     setErrorCacheHeaders(res);
+    if (err instanceof Error) {
+      return res.send(
+        renderError({
+          message: err.message,
+          secondaryMessage: retrieveSecondaryMessage(err),
+          renderOptions: {
+            title_color,
+            text_color,
+            bg_color,
+            border_color,
+            theme,
+            show_repo_link: !(err instanceof MissingParamError),
+          },
+        }),
+      );
+    }
     return res.send(
       renderError({
-        message: err.message,
-        secondaryMessage: err.secondaryMessage,
+        message: "An unknown error occurred",
         renderOptions: {
           title_color,
           text_color,

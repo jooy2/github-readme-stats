@@ -13,7 +13,8 @@ import MockAdapter from "axios-mock-adapter";
 import api from "../api/index.js";
 import { calculateRank } from "../src/calculateRank.js";
 import { renderStatsCard } from "../src/cards/stats.js";
-import { CONSTANTS, renderError } from "../src/common/utils.js";
+import { renderError } from "../src/common/render.js";
+import { CACHE_TTL, DURATIONS } from "../src/common/cache.js";
 
 /**
  * @type {import("../src/fetchers/stats").StatsData}
@@ -89,6 +90,7 @@ const error = {
 
 const mock = new MockAdapter(axios);
 
+// @ts-ignore
 const faker = (query, data) => {
   const req = {
     query: {
@@ -119,8 +121,10 @@ describe("Test /api/", () => {
 
     await api(req, res);
 
-    expect(res.setHeader).toBeCalledWith("Content-Type", "image/svg+xml");
-    expect(res.send).toBeCalledWith(renderStatsCard(stats, { ...req.query }));
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "image/svg+xml");
+    expect(res.send).toHaveBeenCalledWith(
+      renderStatsCard(stats, { ...req.query }),
+    );
   });
 
   it("should render error card on error", async () => {
@@ -128,8 +132,8 @@ describe("Test /api/", () => {
 
     await api(req, res);
 
-    expect(res.setHeader).toBeCalledWith("Content-Type", "image/svg+xml");
-    expect(res.send).toBeCalledWith(
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "image/svg+xml");
+    expect(res.send).toHaveBeenCalledWith(
       renderError({
         message: error.errors[0].message,
         secondaryMessage:
@@ -143,8 +147,8 @@ describe("Test /api/", () => {
 
     await api(req, res);
 
-    expect(res.setHeader).toBeCalledWith("Content-Type", "image/svg+xml");
-    expect(res.send).toBeCalledWith(
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "image/svg+xml");
+    expect(res.send).toHaveBeenCalledWith(
       renderError({
         message: error.errors[0].message,
         secondaryMessage:
@@ -172,8 +176,8 @@ describe("Test /api/", () => {
 
     await api(req, res);
 
-    expect(res.setHeader).toBeCalledWith("Content-Type", "image/svg+xml");
-    expect(res.send).toBeCalledWith(
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "image/svg+xml");
+    expect(res.send).toHaveBeenCalledWith(
       renderStatsCard(stats, {
         hide: ["issues", "prs", "contribs"],
         show_icons: true,
@@ -196,15 +200,15 @@ describe("Test /api/", () => {
       ["Content-Type", "image/svg+xml"],
       [
         "Cache-Control",
-        `max-age=${CONSTANTS.CARD_CACHE_SECONDS}, ` +
-          `s-maxage=${CONSTANTS.CARD_CACHE_SECONDS}, ` +
-          `stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
+        `max-age=${CACHE_TTL.STATS_CARD.DEFAULT}, ` +
+          `s-maxage=${CACHE_TTL.STATS_CARD.DEFAULT}, ` +
+          `stale-while-revalidate=${DURATIONS.ONE_DAY}`,
       ],
     ]);
   });
 
   it("should set proper cache", async () => {
-    const cache_seconds = CONSTANTS.TWELVE_HOURS;
+    const cache_seconds = DURATIONS.TWELVE_HOURS;
     const { req, res } = faker({ cache_seconds }, data_stats);
     await api(req, res);
 
@@ -214,7 +218,7 @@ describe("Test /api/", () => {
         "Cache-Control",
         `max-age=${cache_seconds}, ` +
           `s-maxage=${cache_seconds}, ` +
-          `stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
+          `stale-while-revalidate=${DURATIONS.ONE_DAY}`,
       ],
     ]);
   });
@@ -227,15 +231,16 @@ describe("Test /api/", () => {
       ["Content-Type", "image/svg+xml"],
       [
         "Cache-Control",
-        `max-age=${CONSTANTS.ERROR_CACHE_SECONDS}, ` +
-          `s-maxage=${CONSTANTS.ERROR_CACHE_SECONDS}, ` +
-          `stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
+        `max-age=${CACHE_TTL.ERROR}, ` +
+          `s-maxage=${CACHE_TTL.ERROR}, ` +
+          `stale-while-revalidate=${DURATIONS.ONE_DAY}`,
       ],
     ]);
   });
 
   it("should properly set cache using CACHE_SECONDS env variable", async () => {
-    process.env.CACHE_SECONDS = "10000";
+    const cacheSeconds = "10000";
+    process.env.CACHE_SECONDS = cacheSeconds;
 
     const { req, res } = faker({}, data_stats);
     await api(req, res);
@@ -244,7 +249,9 @@ describe("Test /api/", () => {
       ["Content-Type", "image/svg+xml"],
       [
         "Cache-Control",
-        `max-age=10000, s-maxage=10000, stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
+        `max-age=${cacheSeconds}, ` +
+          `s-maxage=${cacheSeconds}, ` +
+          `stale-while-revalidate=${DURATIONS.ONE_DAY}`,
       ],
     ]);
   });
@@ -275,9 +282,9 @@ describe("Test /api/", () => {
         ["Content-Type", "image/svg+xml"],
         [
           "Cache-Control",
-          `max-age=${CONSTANTS.TWO_DAY}, ` +
-            `s-maxage=${CONSTANTS.TWO_DAY}, ` +
-            `stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
+          `max-age=${CACHE_TTL.STATS_CARD.MAX}, ` +
+            `s-maxage=${CACHE_TTL.STATS_CARD.MAX}, ` +
+            `stale-while-revalidate=${DURATIONS.ONE_DAY}`,
         ],
       ]);
     }
@@ -291,9 +298,9 @@ describe("Test /api/", () => {
         ["Content-Type", "image/svg+xml"],
         [
           "Cache-Control",
-          `max-age=${CONSTANTS.TWELVE_HOURS}, ` +
-            `s-maxage=${CONSTANTS.TWELVE_HOURS}, ` +
-            `stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
+          `max-age=${CACHE_TTL.STATS_CARD.MIN}, ` +
+            `s-maxage=${CACHE_TTL.STATS_CARD.MIN}, ` +
+            `stale-while-revalidate=${DURATIONS.ONE_DAY}`,
         ],
       ]);
     }
@@ -306,9 +313,9 @@ describe("Test /api/", () => {
         ["Content-Type", "image/svg+xml"],
         [
           "Cache-Control",
-          `max-age=${CONSTANTS.TWELVE_HOURS}, ` +
-            `s-maxage=${CONSTANTS.TWELVE_HOURS}, ` +
-            `stale-while-revalidate=${CONSTANTS.ONE_DAY}`,
+          `max-age=${CACHE_TTL.STATS_CARD.MIN}, ` +
+            `s-maxage=${CACHE_TTL.STATS_CARD.MIN}, ` +
+            `stale-while-revalidate=${DURATIONS.ONE_DAY}`,
         ],
       ]);
     }
@@ -333,8 +340,8 @@ describe("Test /api/", () => {
 
     await api(req, res);
 
-    expect(res.setHeader).toBeCalledWith("Content-Type", "image/svg+xml");
-    expect(res.send).toBeCalledWith(
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "image/svg+xml");
+    expect(res.send).toHaveBeenCalledWith(
       renderStatsCard(stats, {
         hide: ["issues", "prs", "contribs"],
         show_icons: true,
@@ -354,8 +361,8 @@ describe("Test /api/", () => {
 
     await api(req, res);
 
-    expect(res.setHeader).toBeCalledWith("Content-Type", "image/svg+xml");
-    expect(res.send).toBeCalledWith(
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "image/svg+xml");
+    expect(res.send).toHaveBeenCalledWith(
       renderError({
         message: "This username is blacklisted",
         secondaryMessage: "Please deploy your own instance",
@@ -369,8 +376,8 @@ describe("Test /api/", () => {
 
     await api(req, res);
 
-    expect(res.setHeader).toBeCalledWith("Content-Type", "image/svg+xml");
-    expect(res.send).toBeCalledWith(
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "image/svg+xml");
+    expect(res.send).toHaveBeenCalledWith(
       renderError({
         message: "Something went wrong",
         secondaryMessage: "Language not found",
@@ -390,8 +397,8 @@ describe("Test /api/", () => {
 
     await api(req, res);
 
-    expect(res.setHeader).toBeCalledWith("Content-Type", "image/svg+xml");
-    expect(res.send).toBeCalledWith(
+    expect(res.setHeader).toHaveBeenCalledWith("Content-Type", "image/svg+xml");
+    expect(res.send).toHaveBeenCalledWith(
       renderError({
         message: "Could not fetch total commits.",
         secondaryMessage: "Please try again later",
